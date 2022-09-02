@@ -13,10 +13,10 @@ int main()
 	fp = fopen("body.html","r+");
 	image = fopen("body.png", "r");
 	
-	#image
+	//image
+	printf("image : %s\n\n", image);
 	
-	
-	# fp 
+	//fp 
 	fseek(fp, 0, SEEK_END);
 	size = ftell(fp);
 	printf("size : %d\n", size);
@@ -43,7 +43,7 @@ int main()
 	printf("src_end_loc : %d\n\n", src_end_loc);
 	
 	
-	# free memory
+	//free memory
 	free(html_str);
 	fclose(fp);
 	fclose(image);
