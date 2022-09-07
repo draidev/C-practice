@@ -99,6 +99,7 @@ int main()
 	fclose(fp);
 	free(i_buffer);
 	free(h_buffer);
+	free(temp);
 
 	return 0;
 }
