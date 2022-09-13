@@ -1,18 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <pthread.h>
 
 #include "parson/parson.h"
+
+#define STRLEN 16
 
 typedef struct JSON_Parser{
 	int repeat;
 	int thread_num;
 }JP;
-
 
 int main(void){
 	JSON_Value *rootValue;
@@ -25,11 +22,10 @@ int main(void){
 	int i, j, rand_num;
 	char low_a = 'a';
 	char upp_a = 'A';
-	char rand_ch[17];
-	rand_ch[16] = '\0';
+	char *rand_ch;
 
 	srand((unsigned int)time(NULL));
-
+	
 	/* 초기화 */
 	rootValue = json_parse_file("jparser.json");
 	rootObject = json_value_get_object(rootValue);
@@ -39,13 +35,14 @@ int main(void){
 	jp.repeat = json_object_get_number(rootObject, "repeat");
 	jp.thread_num = json_object_get_number(rootObject, "thread_num");
 	printf("repeat : %d thread_num : %d\n", jp.repeat, jp.thread_num);
-
+	
 	json_object_set_number(outObject, "repeat_cnt", jp.repeat);
 	json_object_set_value(outObject, "repeat", json_value_init_array());
 	JSON_Array *repeat = json_object_get_array(outObject, "repeat");
 	
 	for(i = 0; i < jp.repeat; i++)
 	{
+		rand_ch = (char *)malloc(sizeof(char) * STRLEN);
 		for (j = 0; j < 16; j++)
 		{
 			rand_num = rand();
@@ -59,14 +56,15 @@ int main(void){
 		newObject = json_value_get_object(newValue);
 		json_object_set_string(newObject, "random_string", rand_ch);
 		json_array_append_value(repeat, newValue);
+		
+		free(rand_ch);
+		rand_ch = NULL;
 	}
 	
 	json_serialize_to_file_pretty(outValue, "output.json");
-	
+
 	//  /* 해제 */
 	json_value_free(rootValue);    // JSON_Value에 할당된 동적 메모리 해제
 	json_value_free(outValue);
-
 	return 0;
 }
-

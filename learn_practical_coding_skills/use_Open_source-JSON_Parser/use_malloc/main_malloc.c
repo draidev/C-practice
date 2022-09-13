@@ -11,7 +11,7 @@ typedef struct JSON_Parser{
 	int thread_num;
 }JP;
 
-int main(){
+int main(void){
 	JSON_Value *rootValue;
 	JSON_Object *rootObject;
 	JSON_Value *outValue;
@@ -42,7 +42,7 @@ int main(){
 	
 	for(i = 0; i < jp.repeat; i++)
 	{
-		rand_ch = (char *)malloc(sizeof(char) * (STRLEN + 1));
+		rand_ch = (char *)malloc(sizeof(char) * STRLEN);
 		for (j = 0; j < 16; j++)
 		{
 			rand_num = rand();
@@ -65,6 +65,6 @@ int main(){
 
 	//  /* 해제 */
 	json_value_free(rootValue);    // JSON_Value에 할당된 동적 메모리 해제
-
+	json_value_free(outValue);
 	return 0;
 }
