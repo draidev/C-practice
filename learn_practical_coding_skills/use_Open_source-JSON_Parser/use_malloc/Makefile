@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -Wall
 LDFLAGS=-lc
-OBJS=main.o ./parson/parson.o 
+OBJS=main_malloc.o parson.o 
 TARGET=main.out
 
 all : $(TARGET)

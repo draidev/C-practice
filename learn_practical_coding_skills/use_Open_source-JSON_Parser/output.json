@@ -1,15 +1,35 @@
 {
     "repeat_cnt": 10,
     "repeat": [
-        "q",
-        "g",
-        "a",
-        "F",
-        "B",
-        "q",
-        "X",
-        "s",
-        "e",
-        "Z"
+        {
+            "random_string": "gmqwXHgRByeamXVZ"
+        },
+        {
+            "random_string": "qVqVsDLNJZwoTwyB"
+        },
+        {
+            "random_string": "JqXiXFZBDDBqcZRs"
+        },
+        {
+            "random_string": "uHPPkacVaZJVXJwg"
+        },
+        {
+            "random_string": "cVoBBoceTewwFooB"
+        },
+        {
+            "random_string": "XeqkeTHguTBRcZae"
+        },
+        {
+            "random_string": "XogyeieyoBuVRkXq"
+        },
+        {
+            "random_string": "qNaXikDeDHyFiymF"
+        },
+        {
+            "random_string": "muFTekRVNNqeZNuq"
+        },
+        {
+            "random_string": "DXNNJsumBsTksFRg"
+        }
     ]
 }
