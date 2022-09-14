@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "parson/parson.h"
 
@@ -11,6 +14,9 @@ typedef struct JSON_Parser{
 	int thread_num;
 }JP;
 
+void *thread_routine(void* name);
+
+
 int main(void){
 	JSON_Value *rootValue;
 	JSON_Object *rootObject;
@@ -18,11 +24,15 @@ int main(void){
 	JSON_Object *outObject;
 	JSON_Value *newValue;
 	JSON_Object *newObject;
+	JSON_Object *threadObject;
 	JP jp; 
 	int i, j, rand_num;
 	char low_a = 'a';
 	char upp_a = 'A';
 	char *rand_ch;
+	pthread_t *pthread;
+	JSON_Array *thread;
+	char **p;
 
 	srand((unsigned int)time(NULL));
 	
@@ -31,15 +41,49 @@ int main(void){
 	rootObject = json_value_get_object(rootValue);
 	outValue = json_value_init_object();
 	outObject = json_value_get_object(outValue);
-
+	
+	// get structure value repeat, thread_num
 	jp.repeat = json_object_get_number(rootObject, "repeat");
 	jp.thread_num = json_object_get_number(rootObject, "thread_num");
+	if (jp.thread_num < 1)
+	{	
+		printf("thread not found. exit.\n");
+		exit(1);
+	}
+
 	printf("repeat : %d thread_num : %d\n", jp.repeat, jp.thread_num);
-	
+	// get thread name
+	thread = json_object_get_array(rootObject, "thread");
+	p = (char**)malloc(sizeof(char*)*jp.thread_num);
+	for (i = 0; i < jp.thread_num; i++)
+	{
+		*(p+i) = (char*)malloc(sizeof(char)*10);
+	}
+
+	for(i = 0; i < jp.thread_num; i++)
+	{
+		threadObject = json_array_get_object(thread, i);
+		strcpy(*(p + i), json_object_get_string(threadObject, "name"));
+		printf("thread name : %s\n", *(p+i));
+	}
+	pthread = (pthread_t*)malloc(sizeof(pthread_t)*jp.thread_num);	
+	pthread_create(&pthread, NULL,(void*)thread_routine, (void**)p);	
+	pthread_create(&(pthread+1), NULL, (void*)thread_routine, (void**)(p+1));
+
+	for (i = 0; i < 20; i++)
+	{
+		printf("main:%d\n",i);
+		sleep(1);
+	}
+	//for(i = 0; i < jp->thread_num; i++)
+	//	free(p1[i]);
+	// get repeat_cnt and write in output file
 	json_object_set_number(outObject, "repeat_cnt", jp.repeat);
 	json_object_set_value(outObject, "repeat", json_value_init_array());
-	JSON_Array *repeat = json_object_get_array(outObject, "repeat");
-	
+	JSON_Array *repeat = json_object_get_array(outObject, "repeat");	
+
+
+	//   /* generate random character */
 	for(i = 0; i < jp.repeat; i++)
 	{
 		rand_ch = (char *)malloc(sizeof(char) * STRLEN);
@@ -68,3 +112,20 @@ int main(void){
 	json_value_free(outValue);
 	return 0;
 }
+
+
+void* thread_routine(void *name){
+        pthread_t tid;
+ 
+        tid=pthread_self();
+ 
+        int i=0;
+        printf("\ttid:%lx\n",tid);
+        while(i<20){
+                printf("\tthread name : %s new thread:%d\n",(char*)name,i);
+                i++;
+                sleep(1);
+        }
+	return 0;
+}
+ 
