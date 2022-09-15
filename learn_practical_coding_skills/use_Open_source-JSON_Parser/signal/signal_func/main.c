@@ -17,7 +17,8 @@ static JSON_Object *outObject;
 static JSON_Value *newValue;
 static JSON_Object *newObject;
 static JSON_Object *threadObject;
-
+static JSON_Array *repeat;
+ 
 typedef struct JSON_Parser{
 	int repeat;
 	int thread_num;
@@ -42,6 +43,49 @@ static int get_thread_name_len(JSON_Array *thread)
 	return strlen(json_object_get_string(rootObject, "name"));
 }
 
+static char* generate_random_char(char *rand_ch, JP jp)
+{
+	char low_a = 'a';
+	char upp_a = 'A';
+	int rand_num, i, j;
+
+	for(i = 0; i < jp.repeat; i++)
+	{
+		for(j = 0; j < STRLEN; j++)
+		{
+			rand_num = rand();
+			if(rand_num % 2 == 0) rand_ch[j] = (char)(low_a + rand_num % 26);
+			else rand_ch[j] = (char)(upp_a + rand_num % 26);
+		}
+	}
+	return rand_ch;
+}
+
+static void json_set_rand_ch(JP jp)
+{
+	int i;
+	char* rand_ch;
+
+	// get repeat_cnt and write in output file
+	json_object_set_number(outObject, "repeat_cnt", jp.repeat);
+	json_object_set_value(outObject, "repeat", json_value_init_array());
+	repeat = json_object_get_array(outObject, "repeat");	
+
+	for(i = 0; i < jp.repeat; i++)
+	{	
+		rand_ch = (char*)malloc(sizeof(char) * STRLEN);
+		generate_random_char(rand_ch, jp);
+
+		newValue = json_value_init_object();
+		newObject = json_value_get_object(newValue);
+		json_object_set_string(newObject, "random_string", rand_ch);
+		json_array_append_value(repeat, newValue);
+		
+		free(rand_ch);
+		rand_ch = NULL;
+	}
+}
+
 static void print_json(int signo)
 {
 	if(signo == SIGINT)
@@ -55,7 +99,9 @@ static void print_json(int signo)
 		char *buf = (char*)malloc(sizeof(char) * repeat_size);
 		json_serialize_to_buffer_pretty(printValue, buf, repeat_size);
 		printf("%s\n", buf);
+
 		free(buf);
+		buf = NULL;
 
 		sleep(3);
 		exit(0);
@@ -67,7 +113,7 @@ static void reload_json(int signo)
 	if(signo == SIGUSR1)
 	{
 		printf("\n\n========================");
-		printf("\nsignal SIGUSR received\n");
+		printf("\nsignal SIGUSR1 received\n");
 		printf("========================\n\n");
 		if(rootValue) json_value_free(rootValue);	
 					
@@ -85,6 +131,8 @@ static void reload_json(int signo)
 		char *buf = (char*)malloc(sizeof(char) * repeat_size);
 		json_serialize_to_buffer_pretty(outValue, buf, repeat_size);
 		printf("%s\n", buf);
+
+		
 	
 		free(buf);
 		buf = NULL;
@@ -96,14 +144,11 @@ static void reload_json(int signo)
 }
 
 int main(void){
-	JP jp; 
-	int i, j, rand_num, thread_name_len;
-	char low_a = 'a';
-	char upp_a = 'A';
-	char *rand_ch;
+	int i, thread_name_len;
 	pthread_t *pthread;
 	JSON_Array *thread;
 	char **p;
+	JP jp; 
 
 	srand((unsigned int)time(NULL));
 	
@@ -147,33 +192,8 @@ int main(void){
 	}
 
 
-	// get repeat_cnt and write in output file
-	json_object_set_number(outObject, "repeat_cnt", jp.repeat);
-	json_object_set_value(outObject, "repeat", json_value_init_array());
-	JSON_Array *repeat = json_object_get_array(outObject, "repeat");	
-
-
 	//   /* generate random character */
-	for(i = 0; i < jp.repeat; i++)
-	{
-		rand_ch = (char *)malloc(sizeof(char) * STRLEN);
-		for (j = 0; j < STRLEN; j++)
-		{
-			rand_num = rand();
-			// choose lower or upper character
-			if(rand_num%2 == 0)
-				rand_ch[j] = (char)(low_a + rand_num % 26);
-			else	
-				rand_ch[j] = (char)(upp_a + rand_num % 26);
-		}
-		newValue = json_value_init_object();
-		newObject = json_value_get_object(newValue);
-		json_object_set_string(newObject, "random_string", rand_ch);
-		json_array_append_value(repeat, newValue);
-		
-		free(rand_ch);
-		rand_ch = NULL;
-	}
+	json_set_rand_ch(jp);
 	
 	json_serialize_to_file_pretty(outValue, "output.json");
 
