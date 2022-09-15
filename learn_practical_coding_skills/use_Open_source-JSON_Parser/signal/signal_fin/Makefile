@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS = -g -c  -Wall -Werror -Wextra -Winline -Wsign-compare -Wunused-parameter -Wpointer-arith -Wshadow -Wstrict-prototypes -Wmissing-prototypes
-LDFLAGS=-lc
+CFLAGS = -g -c -Wall -Werror -Wextra -Winline -Wsign-compare -Wunused-parameter -Wpointer-arith -Wshadow -Wstrict-prototypes -Wmissing-prototypes
+LDFLAGS=-lc -lpthread
 OBJS=main.o ./parson/parson.o 
 TARGET=main.out
 

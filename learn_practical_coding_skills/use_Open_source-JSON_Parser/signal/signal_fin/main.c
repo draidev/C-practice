@@ -10,6 +10,12 @@
 
 #define STRLEN 16
 
+typedef struct JSON_Parser{
+	int repeat;
+	int thread_num;
+}JP;
+
+
 static JSON_Value *rootValue;
 static JSON_Object *rootObject;
 static JSON_Value *outValue;
@@ -18,12 +24,6 @@ static JSON_Value *newValue;
 static JSON_Object *newObject;
 static JSON_Object *threadObject;
 static JSON_Array *repeat;
-
-
-typedef struct JSON_Parser{
-	int repeat;
-	int thread_num;
-}JP;
 
 static void* thread_routine(void* name){
         int i=0;
@@ -117,7 +117,7 @@ static void reload_json(int signo)
 		printf("\nsignal SIGUSR1 received\n");
 		printf("=======================\n\n");
 		if(rootValue) json_value_free(rootValue);	
-					
+			
 		rootValue = json_parse_file("jparser_sig.json");
 		rootObject = json_value_get_object(rootValue);
 		outValue = json_parse_file("jparser.json");
@@ -128,13 +128,11 @@ static void reload_json(int signo)
 
 		json_serialize_to_file_pretty(outValue, "jparser.json");
 
-
 		size_t repeat_size = json_serialization_size_pretty(outValue);
 		char *buf = (char*)malloc(sizeof(char) * repeat_size);
 		json_serialize_to_buffer_pretty(outValue, buf, repeat_size);
 		printf("%s\n", buf);
 
-		
 	
 		free(buf);
 		buf = NULL;
@@ -145,12 +143,13 @@ static void reload_json(int signo)
 	}
 }
 
+
 int main(void){
 	int i, thread_name_len;
 	pthread_t *pthread;
 	JSON_Array *thread;
 	char **p;
-	JP jp; 
+	JP jp;
 
 	srand((unsigned int)time(NULL));
 	
@@ -201,11 +200,21 @@ int main(void){
 	// make output file	
 	json_serialize_to_file_pretty(outValue, "output.json");
 
-	signal(SIGINT, print_json);
-	signal(SIGUSR1, reload_json);
 
-
-	while(1);	
+	while(1)
+	{
+		if(signal(SIGUSR1, reload_json))
+		{	
+			outValue = json_value_init_object();
+			outObject = json_value_get_object(outValue);
+			
+			jp.repeat = json_object_get_number(rootObject, "repeat");
+	
+			json_set_rand_ch(jp);
+			json_serialize_to_file_pretty(outValue, "output.json"); 
+		}
+		signal(SIGINT, print_json);
+	}	
 
 
 	for(i = 0; i < jp.thread_num; i++)

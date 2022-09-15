@@ -6,6 +6,6 @@
         }
     ],
     "reload": {
-        "repeat": 10
+        "repeat": 3 
     }
 }
