@@ -24,6 +24,9 @@ static JSON_Value *newValue;
 static JSON_Object *newObject;
 static JSON_Object *threadObject;
 static JSON_Array *repeat;
+static JSON_Object *sigObject;
+static JSON_Value *sigValue;
+JP jp;
 
 static void* thread_routine(void* name){
         int i=0;
@@ -40,11 +43,11 @@ static void* thread_routine(void* name){
 
 static int get_thread_name_len(JSON_Array *thread)
 {
-	rootObject = json_array_get_object(thread, 0);	
-	return strlen(json_object_get_string(rootObject, "name"));
+	threadObject = json_array_get_object(thread, 0);	
+	return strlen(json_object_get_string(threadObject, "name"));
 }
 
-static char* generate_random_char(char *rand_ch, JP jp)
+static char* generate_random_char(char *rand_ch)
 {
 	char low_a = 'a';
 	char upp_a = 'A';
@@ -62,7 +65,7 @@ static char* generate_random_char(char *rand_ch, JP jp)
 	return rand_ch;
 }
 
-static void json_set_rand_ch(JP jp)
+static void json_set_rand_ch(void)
 {
 	int i;
 	char* rand_ch;
@@ -71,11 +74,13 @@ static void json_set_rand_ch(JP jp)
 	json_object_set_number(outObject, "repeat_cnt", jp.repeat);
 	json_object_set_value(outObject, "repeat", json_value_init_array());
 	repeat = json_object_get_array(outObject, "repeat");	
-
+	
+	printf("=============random func operating===========\n");
+	
 	for(i = 0; i < jp.repeat; i++)
 	{	
 		rand_ch = (char*)malloc(sizeof(char) * STRLEN);
-		generate_random_char(rand_ch, jp);
+		generate_random_char(rand_ch);
 
 		newValue = json_value_init_object();
 		newObject = json_value_get_object(newValue);
@@ -95,11 +100,20 @@ static void print_json(int signo)
 		printf("generating JSON output file...");		
 		printf("\n==============================\n\n\n");
 
+		outValue = json_value_init_object();
+		outObject = json_value_get_object(outValue);
+		rootValue = json_parse_file("jparser.json");
+		rootObject = json_value_get_object(rootValue);
+		jp.repeat = json_object_get_number(rootObject, "repeat");
+		json_set_rand_ch();
+		json_serialize_to_file_pretty(outValue, "output.json");
+
 		JSON_Value *printValue = json_parse_file("output.json");
 		size_t repeat_size = json_serialization_size_pretty(printValue);
 		char *buf = (char*)malloc(sizeof(char) * repeat_size);
 		json_serialize_to_buffer_pretty(printValue, buf, repeat_size);
 		printf("%s\n", buf);
+		
 
 		free(buf);
 		buf = NULL;
@@ -116,30 +130,34 @@ static void reload_json(int signo)
 		printf("\n\n=======================");
 		printf("\nsignal SIGUSR1 received\n");
 		printf("=======================\n\n");
-		if(rootValue) json_value_free(rootValue);	
+		if(outValue)
+		{
+			json_value_free(outValue);	
+			outValue = NULL;
+		}
 			
-		rootValue = json_parse_file("jparser_sig.json");
+		sigValue = json_parse_file("jparser_sig.json");
+		sigObject = json_value_get_object(sigValue);
+		rootValue = json_parse_file("jparser.json");
 		rootObject = json_value_get_object(rootValue);
-		outValue = json_parse_file("jparser.json");
-		outObject = json_value_get_object(outValue);
 		
-		rootObject = json_object_get_object(rootObject, "reload");
-		json_object_set_number(outObject, "repeat", json_object_get_number(rootObject, "repeat"));
+		sigObject = json_object_get_object(sigObject, "reload");
+		json_object_set_number(rootObject, "repeat", json_object_get_number(sigObject, "repeat"));
 
-		json_serialize_to_file_pretty(outValue, "jparser.json");
+		json_serialize_to_file_pretty(rootValue, "jparser.json");
 
-		size_t repeat_size = json_serialization_size_pretty(outValue);
+		size_t repeat_size = json_serialization_size_pretty(rootValue);
 		char *buf = (char*)malloc(sizeof(char) * repeat_size);
-		json_serialize_to_buffer_pretty(outValue, buf, repeat_size);
+		json_serialize_to_buffer_pretty(rootValue, buf, repeat_size);
 		printf("%s\n", buf);
 
-	
+
 		free(buf);
 		buf = NULL;
-		free(rootValue);
+		json_value_free(sigValue);
+		sigValue = NULL;
+		json_value_free(rootValue);
 		rootValue = NULL;
-		free(outValue);
-		outValue = NULL;
 	}
 }
 
@@ -149,7 +167,7 @@ int main(void){
 	pthread_t *pthread;
 	JSON_Array *thread;
 	char **p;
-	JP jp;
+
 
 	srand((unsigned int)time(NULL));
 	
@@ -195,27 +213,15 @@ int main(void){
 
 
 	//   /* generate random character */
-	json_set_rand_ch(jp);
+	json_set_rand_ch();
 
 	// make output file	
 	json_serialize_to_file_pretty(outValue, "output.json");
 
-
-	while(1)
-	{
-		if(signal(SIGUSR1, reload_json))
-		{	
-			outValue = json_value_init_object();
-			outObject = json_value_get_object(outValue);
-			
-			jp.repeat = json_object_get_number(rootObject, "repeat");
+	signal(SIGUSR1, reload_json);
+	signal(SIGINT, print_json);
 	
-			json_set_rand_ch(jp);
-			json_serialize_to_file_pretty(outValue, "output.json"); 
-		}
-		signal(SIGINT, print_json);
-	}	
-
+	while(1);
 
 	for(i = 0; i < jp.thread_num; i++)
 	{
@@ -232,5 +238,6 @@ int main(void){
 	free(pthread);
 	json_value_free(rootValue);    // JSON_Value에 할당된 동적 메모리 해제
 	json_value_free(outValue);
+	json_value_free(newValue);
 	return 0;
 }
