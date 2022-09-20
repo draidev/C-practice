@@ -3,8 +3,10 @@
 int main(void)
 {
  	QUEUE Q;
-	char input[STRLEN];
+	int input;
   	pthread_t *pthread;
+	//char p1[] = "thread_1";
+	//int i;
 
 	pthread = (pthread_t*)malloc(sizeof(pthread));
 	pthread_create(pthread, NULL, thread_routine, &Q);
@@ -12,15 +14,18 @@ int main(void)
 	Q.head = 0;
 	Q.tail = 0;
 
-	while(scanf("%s",input)==1)
+	printf("input num : ");
+	scanf("%d", &input);
+	
+	enqueue(&Q, input);
+
+	while(scanf("%d", &input)==1)
 	{
 		enqueue(&Q, input);
-		sleep(1);
 	}
-
+	
 	pthread_join(*pthread, NULL);
 		
 	free(pthread);
-
 	return 0;
 }

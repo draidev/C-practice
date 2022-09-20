@@ -34,7 +34,7 @@ static void* thread_routine(void* name){
 
         while(1)
 	{
-                printf("%s running time : %ds\n",thread_name,i);
+                printf("%s running \033[0;31mtime\033[0m : %ds\n",thread_name,i);
 		i++;
                 sleep(1);
         }
