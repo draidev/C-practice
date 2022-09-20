@@ -6,15 +6,23 @@ void *thread_routine(void* Q)
 	int i = 0;
 	while(1)
 	{
-	  	//pirintf("%s running \033[0;31mtime\033[0m : %d\n", (char*)thread_name, i);
-		
+	  	//printf("%s running \033[0;31mtime\033[0m : %d\n", (char*)thread_name, i);
+			
 		free_q = dequeue(Q);	 
-	  	i++;
+	  	if(free_q && strcmp(free_q, "q")==0)
+		{
+			free(free_q);
+			break;
+		}
+		i++;
+		//printf("free_q : %s\n", free_q);
+		free(free_q);
+		free_q = NULL;
 		
-		if(free_q != NULL) {free(free_q); free_q = NULL;}
-
 		sleep(1);
 	}
+	
+	return NULL;
 }
 
 
@@ -37,13 +45,14 @@ void enqueue(QUEUE *q, char* data)
 char* dequeue(QUEUE *q)
 {
 	char *data;
-	data = (char*)calloc(STRLEN,sizeof(char));
-
 	if(queue_empty(*q))
 	{
 	  	printf("queue is \033[0;33mempty!\033[0m\n");
 		return 0;
 	}
+
+	data = (char*)calloc(STRLEN,sizeof(char));
+
 	strcpy(data, q->arr[q->tail++]);	
 	printf("\033[0;31mPOP\033[0m : %s\n", data);
 	q->tail = q->tail % MAX;

@@ -15,7 +15,12 @@ int main(void)
 	while(scanf("%s",input)==1)
 	{
 		enqueue(&Q, input);
+		if(strcmp(input,"q")==0)
+			break;
+
+		memset(input, 0, STRLEN);
 	}
+	//printf("end while\n");
 
 	pthread_join(*pthread, NULL);
 		
