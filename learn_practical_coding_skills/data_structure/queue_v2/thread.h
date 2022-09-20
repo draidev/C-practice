@@ -6,12 +6,12 @@
 #ifndef THREAD_H
 #define THREAD_H
 #define MAX 10
-#define STRLEN 256
+#define STRLEN 64 
 
 typedef struct queue{
 	int head;
 	int tail;
-	char q_arr[MAX][STRLEN];
+	char arr[MAX][STRLEN];
 }QUEUE;
 
 void* thread_routine(void* data);

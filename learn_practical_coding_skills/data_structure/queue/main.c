@@ -15,7 +15,6 @@ int main(void)
 	while(scanf("%s",input)==1)
 	{
 		enqueue(&Q, input);
-		sleep(1);
 	}
 
 	pthread_join(*pthread, NULL);
