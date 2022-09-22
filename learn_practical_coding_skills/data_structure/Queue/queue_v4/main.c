@@ -1,5 +1,9 @@
 /*
-use double pointer at queue datatype
+
+- use double pointer at queue datatype
+- solve memory leak issue
+- quit process with input charater "q"
+
 */
 
 #include "thread.h"
@@ -17,7 +21,7 @@ int main(void)
 	Q.head = 0;
 	Q.tail = 0;
 	Q.full_flag = 0;
-
+	
 	input = (char*)malloc(sizeof(char)*STRLEN);
 	Q.arr = (char**)malloc(sizeof(char*)*MAX);
 	for(i = 0; i < MAX; i++)
@@ -28,12 +32,9 @@ int main(void)
 	while(scanf("%s",input)==1)
 	{
 		enqueue(&Q, input);
-
-		if(!queue_full(Q) && strcmp(input,"q")==0) break;
-		
+		if(Q.full_flag == 0 && strcmp(input,"q")==0) break;
 		memset(input, 0, STRLEN);
 	}
-	printf("end while\n");
 
 	pthread_join(*pthread, NULL);
 		

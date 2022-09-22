@@ -16,7 +16,6 @@ void *thread_routine(void* Q)
 			break;
 		}
 		i++;
-		//printf("free_q : %s\n", free_q);
 		free(free_q);
 		free_q = NULL;
 		
@@ -37,10 +36,11 @@ int queue_empty(QUEUE q)
 
 int queue_full(QUEUE q)
 {
-	if((q.tail - q.head == 1) || (q.head==(MAX-1) && q.tail==0)) {printf("head:%d tail:%d\n",q.head, q.tail); return 1;}
+	if((q.tail - q.head == 1) || (q.head==(MAX-1) && q.tail==0)) return 1;
 	
 	return 0;
 }
+
 
 void show_queue(QUEUE *q)
 {
@@ -48,7 +48,7 @@ void show_queue(QUEUE *q)
 
 	if (q->full_flag == 0) q->full_flag = 0;
 
-	printf("\n\033[0;35mqueue======================================================\033[0m\n");
+	printf("\n\033[0;35mqueue\033[0m\n");
 	for(i = 0; i < MAX; i++)
 	{		
 		printf("\033[0;35m%d\033[0m  ",i);
@@ -56,29 +56,28 @@ void show_queue(QUEUE *q)
 		{
 			printf("%c", q->arr[i][j]);
 		}
-		if(i < MAX-1) printf("\t\033[0;35m||\033[0m  ");
+		if(i < MAX-1) printf("   \033[0;35m||\033[0m  ");
 	}
-	printf("\n\033[0;35mqueue======================================================\033[0m\n");
+	printf("\n\033[0;35mqueue\033[0m\n");
 }
 
 
 int enqueue(QUEUE *q, char* data) 
 {
-	if(strcmp(data, "q")==0)
+	if(q->full_flag == 1 && strcmp(data, "q") == 0)
 	{
-		q->arr[q->head] = "q";
+		printf("\033[0;36mcan't\033[0m \033[0;31mquit\033[0m\033[0;36m, queue is full!!!\033[0m\n");
+
 		return 0;
 	}
 
 	if(q->full_flag == 1)
 	{	
-		printf("\033[0;31mcan't push data, queue is full!!!\033[0m");
-		printf("\ncant head : %d  tail : %d \n",q->head, q->tail);
+		printf("\033[0;36mcan't push data, queue is full!!!\033[0m");
 		show_queue(q);
 
 		return 0;
 	}
-	
 
 	strcpy(q->arr[q->head], data);
 

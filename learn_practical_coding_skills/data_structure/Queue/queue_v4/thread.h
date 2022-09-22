@@ -5,13 +5,13 @@
 #include <unistd.h>
 #ifndef THREAD_H
 #define THREAD_H
-#define MAX 3
+#define MAX 10
 #define STRLEN 64 
 
 typedef struct queue{
 	int head;
 	int tail;
-	int full_flag;
+	int full_flag; // for printng "can't push data" and quit process
 	char **arr;
 }QUEUE;
 
