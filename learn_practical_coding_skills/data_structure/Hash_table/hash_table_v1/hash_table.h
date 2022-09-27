@@ -18,15 +18,17 @@ typedef struct linked_list{
 
 typedef struct hash_table{
 	struct linked_list *head;
+	struct linked_list *tail;
 	int list_entry;
 }hash_table_t;
 
 void hash_table_alloc(hash_table_t *hash_tbl);
 void hash_table_free(hash_table_t *hash_tbl);
-void linked_list_alloc(linked_list_t *lnk_lst);
-void linked_list_free(linked_list_t *lnk_lst);
+void linked_list_free(hash_table_t *hash_tbl);
+void append_list(hash_table_t *hash_tbl, char* str_tmp); 
+void hash_key_n_data_alloc(linked_list_t *newnode);
+void set_linked_list(linked_list_t *newnode, char *str);
 int get_hash_index(char* str);
-void get_hashkey_n_data(FILE *hash_csv, hash_table_t *hash_tbl, linked_list_t *lnk_lst); 
-void set_linked_list(linked_list_t *lnk_lst, char *str);
+
 
 #endif
