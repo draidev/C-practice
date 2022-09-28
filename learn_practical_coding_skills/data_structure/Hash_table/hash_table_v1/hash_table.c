@@ -1,38 +1,60 @@
 #include "hash_table.h"
 
-void hash_table_alloc(hash_table_t *hash_tbl){
+void* hash_table_alloc(hash_table_t *hash_tbl){
 	hash_tbl = (hash_table_t*)calloc(sizeof(hash_table_t), HASHLEN);
 			
 	if(hash_tbl) printf("success alloc!\n");
 	else printf("alloc fail!\n");
+
+	(hash_tbl+1)->list_entry = 2;
 
 	int i;
 	for(i = 0; i < HASHLEN; i++){
 		(hash_tbl+i)->head = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
 		(hash_tbl+i)->tail = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
 		(hash_tbl+i)->list_entry = 0;
-		printf("alloc entry %d\n", (hash_tbl+i)->list_entry);
+	}
+
+	return hash_tbl;
+}
+
+
+void show_hash_table(hash_table_t *hash_tbl){
+	int i;
+
+
+	for(i = 0; i < HASHLEN; i++){
+		int j = 0;
+		if((hash_tbl+i)->list_entry > 0){
+			linked_list_t *s_node = (hash_tbl + i)->head;
+
+			printf("\033[0;35mHASH=TABLE==================================================================================\033[0m\n");
+			while(1){
+				j++;
+				s_node = s_node->next;
+				printf("%d || hash_index : %d || hash_key : %s || data : %s\n", j, i, s_node->hash_key, s_node->data);
+				if(s_node->next == NULL)
+					break;
+			}
+			printf("HASH=TABLE==================================================================================\n\n");
+		}
+		else
+			continue;
 	}
 }
 
 
 void append_list(hash_table_t *hash_tbl, char* str_tmp){
-	linked_list_t *newnode = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
+	linked_list_t *newnode;
+	newnode = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
 	int hash_index;
 
 	if(newnode){
 		hash_key_n_data_alloc(newnode);
 		set_linked_list(newnode, str_tmp);
 		hash_index = get_hash_index(newnode->hash_key);
-		
-		printf("hash_key : %s\n", newnode->hash_key);
-		printf("data : %s\n", newnode->data);
-		printf("index : %d\n", hash_index);
-		printf("entry : %d\n", (hash_tbl+1)->list_entry); // core dump!!!!!
-
 
 		if((hash_tbl+hash_index)->list_entry == 0){
-			printf("test\n");
 			(hash_tbl+hash_index)->head->next = newnode;
 			(hash_tbl+hash_index)->tail->next = newnode;
 			(hash_tbl+hash_index)->list_entry++;
@@ -49,9 +71,12 @@ void append_list(hash_table_t *hash_tbl, char* str_tmp){
 		fprintf(stderr, "create node error!!");
 }
 
+
 void hash_key_n_data_alloc(linked_list_t *newnode){
-	if(newnode->hash_key == NULL)
+	if(newnode->hash_key == NULL){
 		newnode->hash_key = (char*)calloc(sizeof(char), KEYLEN);
+		printf("alloc test \n");
+		}
 	else
 		fprintf(stderr, "hash_key alloc error!!");
 
@@ -61,14 +86,15 @@ void hash_key_n_data_alloc(linked_list_t *newnode){
 		fprintf(stderr, "data alloc error!!");
 }
 
+
 void set_linked_list(linked_list_t *newnode, char *str){
 	char *p;
 
 	p = strtok(str, ", ");
-	strncpy(newnode->hash_key, p, STRLEN);
+	strncpy(newnode->hash_key, p, strlen(p));
 
-	p = strtok(NULL, ", ");
-	strncpy(newnode->data, p, STRLEN);
+	p = strtok(NULL, "\n");
+	strncpy(newnode->data, p, strlen(p));
 
 	newnode->next = NULL;
 }
@@ -90,9 +116,22 @@ void hash_table_free(hash_table_t *hash_tbl){
 	int i;
 	
 	for(i = 0; i < HASHLEN; i++){
-		free((hash_tbl+i)->head);
-		free((hash_tbl+i)->tail);
+		if((hash_tbl+i)->head){
+			free((hash_tbl+i)->head);
+			(hash_tbl+i)->head = NULL;
+		}
+		if((hash_tbl+i)->tail){
+			free((hash_tbl+i)->tail);
+			(hash_tbl+i)->tail = NULL;
+		}
 	}
+
+	if(hash_tbl){
+		free(hash_tbl);
+		hash_tbl = NULL;
+	}
+	
+
 }
 
 
@@ -103,15 +142,34 @@ void linked_list_free(hash_table_t *hash_tbl){
 
 	for(i = 0; i < HASHLEN; i++)
 	{
-		f_node = (hash_tbl+i)->head->next;
+		if((hash_tbl+i)->head->next){
+			f_node = (hash_tbl+i)->head->next;
+		}
+		else
+			continue;
+
 		f_next = f_node->next;
 
 		for(j = 0; j < (hash_tbl+j)->list_entry; j++){
+			free(f_node->hash_key);
+			free(f_node->data);
 			free(f_node);
-			f_node = f_next;
+			f_node = NULL;
+
+			if(f_next)
+				f_node = f_next;
+			else
+				break;
 	
 			if(f_node->next != NULL)
 				f_next = f_node->next;
+			else{
+				free(f_node->hash_key);
+				free(f_node->data);
+				free(f_node);
+				f_node = NULL;
+				break;
+			}
 		}
 	}
 }

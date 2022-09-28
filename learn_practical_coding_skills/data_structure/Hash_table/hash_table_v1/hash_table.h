@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define HASHLEN 31
+#define HASHLEN 31 
 #define KEYLEN 32
 #define DATALEN 128
 #define STRLEN 256
@@ -22,13 +22,13 @@ typedef struct hash_table{
 	int list_entry;
 }hash_table_t;
 
-void hash_table_alloc(hash_table_t *hash_tbl);
+void* hash_table_alloc(hash_table_t *hash_tbl);
 void hash_table_free(hash_table_t *hash_tbl);
 void linked_list_free(hash_table_t *hash_tbl);
 void append_list(hash_table_t *hash_tbl, char* str_tmp); 
 void hash_key_n_data_alloc(linked_list_t *newnode);
 void set_linked_list(linked_list_t *newnode, char *str);
 int get_hash_index(char* str);
-
+void show_hash_table(hash_table_t *hash_tbl);
 
 #endif
