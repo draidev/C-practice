@@ -10,7 +10,6 @@ int main(void){
 	if(hash_csv){
 		while(fgets(str_tmp, STRLEN, hash_csv) != NULL){
 			append_list(hash_tbl, str_tmp);
-	
 		}
 	}
 	else

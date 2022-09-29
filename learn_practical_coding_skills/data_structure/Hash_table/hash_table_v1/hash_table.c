@@ -6,8 +6,6 @@ void* hash_table_alloc(hash_table_t *hash_tbl){
 	if(hash_tbl) printf("success alloc!\n");
 	else printf("alloc fail!\n");
 
-	(hash_tbl+1)->list_entry = 2;
-
 	int i;
 	for(i = 0; i < HASHLEN; i++){
 		(hash_tbl+i)->head = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
@@ -73,10 +71,8 @@ void append_list(hash_table_t *hash_tbl, char* str_tmp){
 
 
 void hash_key_n_data_alloc(linked_list_t *newnode){
-	if(newnode->hash_key == NULL){
+	if(newnode->hash_key == NULL)
 		newnode->hash_key = (char*)calloc(sizeof(char), KEYLEN);
-		printf("alloc test \n");
-		}
 	else
 		fprintf(stderr, "hash_key alloc error!!");
 
@@ -142,32 +138,35 @@ void linked_list_free(hash_table_t *hash_tbl){
 
 	for(i = 0; i < HASHLEN; i++)
 	{
-		if((hash_tbl+i)->head->next){
+		if((hash_tbl+i)->head->next)
 			f_node = (hash_tbl+i)->head->next;
-		}
 		else
 			continue;
 
 		f_next = f_node->next;
 
-		for(j = 0; j < (hash_tbl+j)->list_entry; j++){
-			free(f_node->hash_key);
-			free(f_node->data);
-			free(f_node);
-			f_node = NULL;
-
-			if(f_next)
-				f_node = f_next;
-			else
-				break;
-	
-			if(f_node->next != NULL)
-				f_next = f_node->next;
-			else{
+		for(j = 0; j < (hash_tbl + i)->list_entry; j++){
+			if(f_node->hash_key){
 				free(f_node->hash_key);
+				f_node->hash_key = NULL;
+			}
+	
+			if(f_node->data){
 				free(f_node->data);
+				f_node->data = NULL;
+			}
+
+			if(f_node){
 				free(f_node);
 				f_node = NULL;
+			}
+
+			if(f_next){
+				f_node = f_next;
+				f_next = f_node->next;
+			}
+			else{
+				f_next = NULL;
 				break;
 			}
 		}
