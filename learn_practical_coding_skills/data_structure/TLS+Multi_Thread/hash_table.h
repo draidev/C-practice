@@ -11,7 +11,7 @@
 #define HASHLEN 31 
 #define KEYLEN 32
 #define DATALEN 128
-#define STRLEN 256
+#define STRLEN 64 
 
 typedef struct linked_list{
 	struct linked_list *next;
@@ -26,18 +26,25 @@ typedef struct hash_table{
 }hash_table_t;
 
 typedef struct JSON_Parser{
+	char *hash_file;
+	char *thread_name;
 	int thread_num;
-	char **thread_name;
+	int thread_option;
+	int sleep_flag;
+	int done_flag;
 }jp_t;
 
 
-void get_json_conf(jp_t *jp);
-void JSON_Parser_alloc(jp_t *jp);
+jp_t* get_json_conf(jp_t *jp);
+jp_t* JSON_Parser_alloc(jp_t *jp, int num);
 void JSON_Parser_free(jp_t *jp);
 void *thread_routine(void *data);
 
+int check_sleep_flag(jp_t *jp);
+
 void *hash_table_alloc(hash_table_t *hash_tbl);
 void hash_table_free(hash_table_t *hash_tbl);
+void TLS_free(hash_table_t *hash_tbl);
 void linked_list_free(hash_table_t *hash_tbl);
 void append_list(hash_table_t *hash_tbl, char* str_tmp); 
 void hash_key_n_data_alloc(linked_list_t *newnode);

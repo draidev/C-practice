@@ -1,81 +1,145 @@
 #include "hash_table.h"
 
-void get_json_conf(jp_t *jp){
+/* json & TLS function */
+jp_t* get_json_conf(jp_t *jp){
 	JSON_Value *rootValue;
 	JSON_Object *rootObject;
+	JSON_Object *arrayObject;
 	JSON_Array *rootArray;
-	int i;
-	
-	rootValue = json_parse_file("thread.conf");
+	char temp[STRLEN];
+	int i, num;
+
+	rootValue = json_parse_file("thread.json");
 	rootObject = json_value_get_object(rootValue);
-	jp->thread_num = (int)json_object_get_number(rootObject, "thread_num");
+	num = (int)json_object_get_number(rootObject, "thread_num");
 	
-	JSON_Parser_alloc(jp);
-	
+	jp = JSON_Parser_alloc(jp, num);
+
 	rootArray = json_object_get_array(rootObject, "thread");
-	for(i = 0; i < jp->thread_num; i++){
-		strncpy(*(jp->thread_name + i), json_object_get_string(json_array_get_object(rootArray, i), "name"), strlen(json_object_get_string(json_array_get_object(rootArray,i), "name"))+1);
+	for(i = 0; i < num; i++){
+		(jp+i)->thread_num = num;
+		
+		arrayObject = json_array_get_object(rootArray, i);
+		(jp+i)->thread_option = (int)json_object_get_number(arrayObject, "thread_option");
+		
+		strcpy(temp, json_object_get_string(arrayObject, "name"));
+		strncpy((jp+i)->thread_name, temp, strlen(temp)+1);
+		strcpy(temp, json_object_get_string(arrayObject, "hash_file"));
+		strncpy((jp+i)->hash_file, temp, strlen(temp)+1);
 	}
+	
+	json_value_free(rootValue);
+
+	return jp;
 }
 
-void JSON_Parser_alloc(jp_t *jp){
-	int i;
 
-	jp->thread_name = (char**)calloc(sizeof(char*), jp->thread_num);
-	for(i = 0; i < jp->thread_num; i++){
-		*(jp->thread_name + i) = (char*)calloc(sizeof(char), STRLEN);
+jp_t* JSON_Parser_alloc(jp_t *jp, int num){
+	int i;
+	jp = (jp_t*)calloc(num, sizeof(jp_t));
+	if(jp) printf("success jp alloc!!\n");
+	else printf("fail jp alloc!!\n"); 
+
+	for(i = 0; i < num; i++){
+		(jp+i)->hash_file = (char*)calloc(sizeof(char), STRLEN);
+		(jp+i)->thread_name = (char*)calloc(sizeof(char), STRLEN);
 	}
+
+	return jp;
 }
 
 void JSON_Parser_free(jp_t *jp){
-	int i; 
+	int i;
+
 	for(i = 0; i < jp->thread_num; i++){
-		free(*(jp->thread_name + i));
+		if((jp+i)->hash_file != NULL){
+			free((jp+i)->hash_file);
+			(jp+i)->hash_file = NULL;
+		}
+		else
+			printf("hash_file free error!\n");
+
+		if((jp+i)->thread_name){
+			free((jp+i)->thread_name);
+			(jp+i)->thread_name = NULL;
+		}
+		else
+			printf("thread_name free error!\n");
 	}
-	free(jp->thread_name);
+
+	if(jp != NULL){
+		free(jp);
+		jp = NULL;
+	}
+	else printf("jp free error!\n"); 
 }
 
-
-__thread hash_table_t TLS_hash[HASHLEN];
-void *thread_routine(void *data){
-	pid_t pid;
-	pthread_t tid;
+/* thread function */
+__thread hash_table_t TLS_hash[HASHLEN]; //declare TLS here!!
+void *thread_routine(void *jp){
 	FILE *hash_csv = NULL;
 	char str_tmp[STRLEN];
-	int i = 0;
+	char file_name[STRLEN];
+	char thread_name[STRLEN];
+	int j, num = 0, option = 0;
+	jp_t *temp_jp = (jp_t*)jp;
 
-	pid = getpid();
-	tid = pthread_self();
-	printf("threadname: %s tid : %x pid : %u\n", (char*)data, (unsigned int)tid, (unsigned int)pid);
+	temp_jp->sleep_flag = 0;
+	temp_jp->done_flag = 0;
+	
+	num = temp_jp->thread_num;
+	option = temp_jp->thread_option;
+	strncpy(file_name, temp_jp->hash_file, strlen(temp_jp->hash_file)+1);
+	strncpy(thread_name, temp_jp->thread_name, strlen(temp_jp->thread_name)+1);
 
+	printf("num : %d option : %d file_name : %s thread_name : %s\n", num, option, file_name, thread_name); 
 	
 	hash_table_alloc(TLS_hash);
-	hash_csv = fopen("hash.csv", "r");
+	hash_csv = fopen(file_name, "r");
 	if(hash_csv)
 		while(fgets(str_tmp, STRLEN, hash_csv) != NULL){
-			append_list(TLS_hash, str_tmp);
+			for(j = 0; j < option; j++){
+				temp_jp->sleep_flag = 1;
+				sleep(1);
+			}
+			temp_jp->sleep_flag = 0;
 			sleep(1);
-			printf("name : %s, progress: %d\n", (char*)data, i);
-			i++;
+
+			append_list(TLS_hash, str_tmp);
 		}
 	else
 		fprintf(stderr, "fileopen error!!\n");
 
+	temp_jp->done_flag = 1;
+	temp_jp->sleep_flag = 1;
+	
+			
+			
+	printf("\n\n\n\n\033[0;34m==================================================================================\033[0m\n");
+	printf("\033[0;34m%s\033[0m\n", temp_jp->thread_name);
 	show_hash_table(TLS_hash);
+	printf("\033[0;34m============================================================================================\033[0m\n");
 
 	fclose(hash_csv);
 	linked_list_free(TLS_hash);
-	hash_table_free(TLS_hash);
-
+	TLS_free(TLS_hash);
 	return 0;
 }
 
 
+int check_sleep_flag(jp_t *jp){
+	if(jp->sleep_flag == 1)
+		return 1;		
+	else
+		return 0;
+}
+
+
+/* hash table function*/
 void* hash_table_alloc(hash_table_t *hash_tbl){
 	//hash_tbl = (hash_table_t*)calloc(sizeof(hash_table_t), HASHLEN);
-			
-//	if(hash_tbl) printf("success alloc!\n");
-//	else printf("alloc fail!\n");
+	//	if(hash_tbl) printf("success alloc!\n");
+	//	else printf("alloc fail!\n");
 
 	int i;
 	for(i = 0; i < HASHLEN; i++){
@@ -90,7 +154,8 @@ void* hash_table_alloc(hash_table_t *hash_tbl){
 
 void show_hash_table(hash_table_t *hash_tbl){
 	int i;
-
+	
+	
 
 	for(i = 0; i < HASHLEN; i++){
 		int j = 0;
@@ -105,7 +170,7 @@ void show_hash_table(hash_table_t *hash_tbl){
 				if(s_node->next == NULL)
 					break;
 			}
-			printf("HASH=TABLE==================================================================================\n\n");
+			printf("\033[0;35mHASH=TABLE==================================================================================\033[0m\n\n");
 		}
 		else
 			continue;
@@ -117,22 +182,19 @@ void append_list(hash_table_t *hash_tbl, char* str_tmp){
 	linked_list_t *newnode;
 	newnode = (linked_list_t*)calloc(sizeof(linked_list_t), 1);
 	int hash_index;
-	printf("in appendlist\n");
+
 	if(newnode){
 		hash_key_n_data_alloc(newnode);
 		set_linked_list(newnode, str_tmp);
 		hash_index = get_hash_index(newnode->hash_key);
 		
-		printf("hashindex : %d\n", (hash_tbl+hash_index)->list_entry);
 		if((hash_tbl+hash_index)->list_entry == 0){
-			printf("after listentry\n");
 			(hash_tbl+hash_index)->head->next = newnode;
 			(hash_tbl+hash_index)->tail->next = newnode;
 			(hash_tbl+hash_index)->list_entry++;
 			newnode->next = NULL;
 		}
 		else{
-			printf("test else\n");
 			(hash_tbl+hash_index)->tail->next->next = newnode;
 			(hash_tbl+hash_index)->tail->next = newnode;
 			(hash_tbl+hash_index)->list_entry++;
@@ -161,10 +223,10 @@ void set_linked_list(linked_list_t *newnode, char *str){
 	char *p;
 
 	p = strtok(str, ", ");
-	strncpy(newnode->hash_key, p, strlen(p));
+	strncpy(newnode->hash_key, p, strlen(p)+1);
 
 	p = strtok(NULL, "\n");
-	strncpy(newnode->data, p, strlen(p));
+	strncpy(newnode->data, p, strlen(p)+1);
 
 	newnode->next = NULL;
 }
@@ -199,9 +261,23 @@ void hash_table_free(hash_table_t *hash_tbl){
 	if(hash_tbl){
 		free(hash_tbl);
 		hash_tbl = NULL;
-	}
-	
+	}	
+}
 
+
+void TLS_free(hash_table_t *hash_tbl){
+	int i;
+
+	for(i = 0; i < HASHLEN; i++){
+		if((hash_tbl+i)->head){
+			free((hash_tbl+i)->head);
+			(hash_tbl+i)->head = NULL;
+		}
+		if((hash_tbl+i)->tail){
+			free((hash_tbl+i)->tail);
+			(hash_tbl+i)->tail = NULL;
+		}
+	}
 }
 
 
