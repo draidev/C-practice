@@ -36,7 +36,6 @@ int main(void){
 				printf("\n\033[0;36m%s\033[0m \033[0;35mDONE\033[0m\n\n", (jp+i)->thread_name);
 				break_flag++;
 				(jp+i)->done_flag = -1;
-				break;
 			}
 			else if((check_sleep_flag(jp+i)))
 				printf("\033[0;36m%s\033[0m \033[0;33mSLEEP\033[0m\n",(jp+i)->thread_name);
