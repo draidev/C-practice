@@ -8,8 +8,7 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in clnt_addr;
 	socklen_t clnt_addr_size;
 
-	char message[] = "Hello World!";
-	int str_len; 
+	char message[BUF_SIZE] = "Hello World!";
 
 	if(argc != 2){
 		printf("Usage : %s <port>\n", argv[0]);
@@ -33,25 +32,14 @@ int main(int argc, char *argv[]){
 
 	clnt_addr_size = sizeof(clnt_addr);
 
-	while(1){
+
 	clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
-	printf("client address : %s\n",inet_ntoa(clnt_addr.sin_addr)); // print ip
-	
 	if(clnt_sock == -1)
 		error_handling("accept() error");
-	else                       
-		printf("Connected client\n");
 
-	while((str_len = read(clnt_sock, message, BUF_SIZE)) != 0)
-		write(clnt_sock, message, str_len);
-	
-	if(strcmp(message, "q"))
-		break;
-	printf("Message from client : %s\n", message);
+	write(clnt_sock, message, sizeof(message));
 
 	close(clnt_sock);
-	}
-
 	close(serv_sock);
 
 	return 0;
