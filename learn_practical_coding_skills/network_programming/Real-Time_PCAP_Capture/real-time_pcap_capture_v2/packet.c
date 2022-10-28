@@ -5,7 +5,6 @@
  * */
 
 #include "packet.h"
-#include "pcap_header.h"
 
 void packet_handler_offline(u_char *handle, const struct pcap_pkthdr* pkthdr, const u_char* packet){
 	struct ether_header *ep;
@@ -31,18 +30,30 @@ void packet_handler_offline(u_char *handle, const struct pcap_pkthdr* pkthdr, co
 			printf("%s:%d -> %s:%d [%s]\n", inet_ntoa(iph->ip_src), ntohs(tcph->source), inet_ntoa(iph->ip_dst), ntohs(tcph->dest), "TCP");
 		}
 	}
-
 }
 
 
 void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkthdr, const u_char* packet){
-	int length = pkthdr->len;
+	int time_check;
 	
-	//avoid complie error about no use argument
-	if(handle == NULL)
-			length--;
 
-	pcap_dump(handle, pkthdr, packet);
-	
+	timer = time(NULL);
+	t = localtime(&timer);
+	time_check = t->tm_min;
+
+	printf("time_flag : %d  time_check : %d\n", time_flag, time_check);
+	sprintf(fname, "%04d_%02d_%02d_%02d_%02d.pcap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
+
+	printf("===== pcap_dump_open =====\n");
+	pcap_dumper_t *df;
+	df = pcap_dump_open(handle, fname);
+	if(df == 0) {printf("fail dump_open\n"); return 3;}
+
+	if(time_flag == time_check)
+		pcap_dump(handle, pkthdr, packet);
+	else{
+		printf("\n\033[0;31m minute changed, make new file\033[0m\n\n");
+		printf("time_flag : %d  time_check : %d\n", time_flag, time_check);
+		pcap_breakloop((pcap_t*)handle);
+	}
 }
-

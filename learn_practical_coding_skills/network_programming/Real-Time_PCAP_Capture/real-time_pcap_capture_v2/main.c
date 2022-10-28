@@ -5,7 +5,6 @@
 */
 
 #include "packet.h"
-#include "pcap_header.h"
 
 int main(int argc, char* argv[]){
 	char *dev, errbuf[PCAP_ERRBUF_SIZE];
@@ -58,43 +57,42 @@ int main(int argc, char* argv[]){
 	char option;
 
 	pcap_t *handle;
-	
-	time_t timer;
-	struct tm* t;
-	char fname[32];
-	int time_flag;
 
 
 	optind = 1;
 	while((option = getopt(argc, argv, optstring)) != -1){
 		switch(option) {
 			case 'w':
-				handle = pcap_open_live(dev, BUFSIZ, PROMISCUOUS, -1, error_buffer);					if(handle == NULL){
-					printf("%s\n", error_buffer);
-					exit(1);
+				while(1){
+					printf("===== pcap_open_live =====\n");
+					handle = pcap_open_live(dev, BUFSIZ, PROMISCUOUS, -1, error_buffer);					if(handle == NULL){
+						printf("%s\n", error_buffer);
+						exit(1);
+					}
+
+					// make file name
+					timer = time(NULL);
+					t = localtime(&timer);
+					time_flag = t->tm_min;
+
+
+					// pcap dump
+
+					if(pcap_loop(handle, 0, packet_handler_live, (u_char*)df) < 0){
+						printf("pcap_loop() failed: %s\n", pcap_geterr(handle));
+						return 2;
+					}
+					else
+						printf("Real-Time pcap capture loop success!\n");
+					
+					printf("after pcap_loop\n");
+
+					memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
+					// attach pcap_header and close
+					file_write_pcap_file_header(df);
+					pcap_dump_close(df);
+					pcap_close(handle);
 				}
-			
-				// make file name
-				timer = time(NULL);
-				t = localtime(&timer);
-				sprintf(fname, "%04d_%02d_%02d_%02d_%02d.cap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
-
-				time_flag = t->tm_min;
-				printf("time_flag : %d\n", time_flag);
-
-				pcap_dumper_t *df;
-				df = pcap_dump_open(handle, fname);
-				if(df == 0) {printf("fail dump_open\n"); return 3;}
-
-				if(pcap_loop(handle, 0, packet_handler_live, (u_char*)df) < 0){
-					printf("pcap_loop() failed: %s", pcap_geterr(handle));
-					return 2;
-				}
-				else
-					printf("Real-Time pcap capture loop success!\n");
-				
-				file_write_pcap_file_header(df);
-
 				break;
 				
 			case 'r':
@@ -106,15 +104,11 @@ int main(int argc, char* argv[]){
 				else
 					printf("loop success!\n");
 					
+				pcap_close(handle);
+
 				break;
 		}
 	}
 
-	pcap_close(handle);
-
 	return 0;
 }
-
-
-
-
