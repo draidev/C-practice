@@ -37,12 +37,18 @@ void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkthdr, const
 	timer = time(NULL);
 	t = localtime(&timer);
 
-	printf("min : %d sec : %d\n", t->tm_min, t->tm_sec);
+	//printf("min : %d sec : %d\n", t->tm_min, t->tm_sec);
 
 	if(handle)
 		pcap_dump(handle, pkthdr, packet);
 	else
-		printf("dump error!\n");
+		printf("dump error!\n");			
+}
+
+
+struct tm *check_time(time_t timer, struct tm *t){
+	timer = time(NULL);
+	t = localtime(&timer);
 	
-			
+	return t;
 }

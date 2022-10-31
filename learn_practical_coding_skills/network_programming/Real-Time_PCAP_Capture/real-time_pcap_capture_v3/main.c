@@ -71,9 +71,10 @@ int main(int argc, char* argv[]){
 // 2. read pcap and parsing
 	const char *optstring = "r:w:";
 	char option;
-
 	pcap_t *handle;
-	
+	int time_flag;
+	time_t timer;
+	struct tm *t;
 	char fname[32];
 
 	printf("version :: %s\n", pcap_lib_version());
@@ -92,12 +93,12 @@ int main(int argc, char* argv[]){
 					}
 
 					// make file name
-					timer = time(NULL);
-					t = localtime(&timer);
+					//timer = time(NULL);
+					//t = localtime(&timer);
+					t = check_time(timer,t);
 					time_flag = t->tm_min;
 					printf("time_flag : %d\n", time_flag);
-					sprintf(fname, "%04d_%02d_%02d_%02d_%02d.pcap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
-
+					sprintf(fname, "%04d_%02d_%02d_%02d_%02d.cap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
 
 					printf("min : %d sec : %d\n", t->tm_min, t->tm_sec);
 					// pcap dump
@@ -106,8 +107,7 @@ int main(int argc, char* argv[]){
 					df = pcap_dump_open_append(handle, fname);
 					if(df == 0) {printf("fail dump_open\n"); exit(1);}
 
-
-					if(pcap_loop(handle, 10, packet_handler_live, (u_char*)df) < 0){
+					if(pcap_loop(handle, 1, packet_handler_live, (u_char*)df) < 0){
 						printf("exit loop!! \n");
 					}
 					else
@@ -116,10 +116,18 @@ int main(int argc, char* argv[]){
 
 					memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
 					// attach pcap_header and close
-					file_write_pcap_file_header(df);
-					pcap_dump_close(df);
-					pcap_close(handle);
-					pcap_freealldevs(alldevsp);
+					t = check_time(timer,t);
+					if(t->tm_min != time_flag){
+						file_write_pcap_file_header(df);
+						pcap_dump_close(df);
+						pcap_close(handle);
+						pcap_freealldevs(alldevsp);
+					}
+					else{
+						pcap_dump_close(df);
+						pcap_close(handle);
+						pcap_freealldevs(alldevsp);
+					}
 				}
 				break;
 				
