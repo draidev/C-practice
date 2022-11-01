@@ -73,7 +73,8 @@ int main(int argc, char* argv[]){
 	char option;
 	pcap_t *handle;
 	int time_flag;
-	time_t timer;
+	time_t timer = 0; //  warning: `timer' might be used uninitialized in this function
+	// (error reference) : https://kldp.org/node/68442
 	struct tm *t;
 	char fname[32];
 
@@ -95,7 +96,7 @@ int main(int argc, char* argv[]){
 					// make file name
 					//timer = time(NULL);
 					//t = localtime(&timer);
-					t = check_time(timer,t);
+					t = check_time(timer);
 					time_flag = t->tm_min;
 					printf("time_flag : %d\n", time_flag);
 					sprintf(fname, "%04d_%02d_%02d_%02d_%02d.cap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
@@ -116,7 +117,7 @@ int main(int argc, char* argv[]){
 
 					memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
 					// attach pcap_header and close
-					t = check_time(timer,t);
+					t = check_time(timer);
 					if(t->tm_min != time_flag){
 						file_write_pcap_file_header(df);
 						pcap_dump_close(df);

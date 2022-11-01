@@ -35,6 +35,6 @@ struct tcphdr *tcph;
 void packet_handler_offline(u_char *handle, const struct pcap_pkthdr* pkthdr, const u_char* packet);
 void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkyhdr, const u_char* packet);
 
-struct tm *check_time(time_t timer, struct tm *t);
+struct tm *check_time(time_t timer);
 
 #endif
