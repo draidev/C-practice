@@ -40,13 +40,20 @@ void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkthdr, const
 	t = localtime(&timer);
 
 	time_check = t->tm_min;
-	printf("time_flag : %d  time_check : %d\n", time_flag, time_check);
+
+	printf("time_flag : %d  time_check : %d second : %d\n", time_flag, time_check, t->tm_sec);
 
 	if(time_flag == time_check)
 		pcap_dump(handle, pkthdr, packet);
 	else{
 		printf("\n\033[0;31m minute changed, make new file\033[0m\n\n");
 		printf("time_flag : %d  time_check : %d\n", time_flag, time_check);
-		pcap_breakloop((pcap_t*)handle);
+		if(handle){
+			printf("handle is not null\n");
+			pcap_breakloop((pcap_t*)handle);
+			printf("=====breakloop=====\n");
+		}
+		else
+			printf("handle is null\n");
 	}
 }

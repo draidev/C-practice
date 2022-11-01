@@ -35,7 +35,7 @@ void packet_handler_offline(u_char *handle, const struct pcap_pkthdr* pkthdr, co
 
 void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkthdr, const u_char* packet){
 	int time_check;
-	
+	char fname[32];	
 
 	timer = time(NULL);
 	t = localtime(&timer);
@@ -46,14 +46,17 @@ void packet_handler_live(u_char *handle, const struct pcap_pkthdr* pkthdr, const
 
 	printf("===== pcap_dump_open =====\n");
 	pcap_dumper_t *df;
-	df = pcap_dump_open(handle, fname);
-	if(df == 0) {printf("fail dump_open\n"); return 3;}
+	df = pcap_dump_open((pcap_t*)handle, fname);
+	if(df == 0) printf("fail dump_open\n");
 
 	if(time_flag == time_check)
-		pcap_dump(handle, pkthdr, packet);
+		pcap_dump(handle, pkthdr, (u_char*)df);
 	else{
 		printf("\n\033[0;31m minute changed, make new file\033[0m\n\n");
 		printf("time_flag : %d  time_check : %d\n", time_flag, time_check);
-		pcap_breakloop((pcap_t*)handle);
+			
+		memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
+		file_write_pcap_file_header(df);
+		pcap_dump_close(df);
 	}
 }

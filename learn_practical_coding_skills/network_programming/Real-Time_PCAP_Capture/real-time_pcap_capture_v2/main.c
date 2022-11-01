@@ -65,20 +65,14 @@ int main(int argc, char* argv[]){
 			case 'w':
 				while(1){
 					printf("===== pcap_open_live =====\n");
+					printf("version : %s", pcap_lib_version());
 					handle = pcap_open_live(dev, BUFSIZ, PROMISCUOUS, -1, error_buffer);					if(handle == NULL){
 						printf("%s\n", error_buffer);
 						exit(1);
 					}
 
-					// make file name
-					timer = time(NULL);
-					t = localtime(&timer);
-					time_flag = t->tm_min;
 
-
-					// pcap dump
-
-					if(pcap_loop(handle, 0, packet_handler_live, (u_char*)df) < 0){
+					if(pcap_loop(handle, 0, packet_handler_live, NULL) < 0){
 						printf("pcap_loop() failed: %s\n", pcap_geterr(handle));
 						return 2;
 					}
@@ -87,10 +81,6 @@ int main(int argc, char* argv[]){
 					
 					printf("after pcap_loop\n");
 
-					memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
-					// attach pcap_header and close
-					file_write_pcap_file_header(df);
-					pcap_dump_close(df);
 					pcap_close(handle);
 				}
 				break;

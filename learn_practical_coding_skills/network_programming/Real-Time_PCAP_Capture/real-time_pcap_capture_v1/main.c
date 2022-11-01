@@ -7,24 +7,37 @@
 #include "packet.h"
 
 int main(int argc, char* argv[]){
-	char *dev, errbuf[PCAP_ERRBUF_SIZE];
+	char errbuf[PCAP_ERRBUF_SIZE];
 	char *net;
 	char *mask;
-	int ret;
+	pcap_if_t *alldevsp, *d;
+	int ret, i = 1;
 	bpf_u_int32 netp; // ip
 	bpf_u_int32 maskp; // subnet mask
 	struct in_addr addr;
 	char error_buffer[PCAP_ERRBUF_SIZE];
 
-	dev = pcap_lookupdev(errbuf);
+	ret = pcap_findalldevs(&alldevsp, errbuf);
 
-	if(dev == NULL){
-		printf("cant find device by auto\n");
+	if(ret == -1){
+		printf("pcap_findalldev ERR : %s\n", errbuf);
+		return -1;
 	}
-	printf("device name : %s\n", dev);
+
+	for(d=alldevsp; d; d=d->next){
+		printf("%d. %s", i++, d->name);
+		if(d->description){
+			printf("(%s)\n", d->description);
+		}
+		else
+			printf("(None)\n");
+	
+	}
+	//printf("device name : %s\n", dev);
 
 	// get network mask&ip about network-device
-	ret = pcap_lookupnet(dev, &netp, &maskp, errbuf);
+	d = alldevsp;
+	ret = pcap_lookupnet(d->name, &netp, &maskp, errbuf);
 
 	if(ret == -1){
 		printf("%s\n", errbuf);
@@ -51,6 +64,7 @@ int main(int argc, char* argv[]){
 
 	printf("mask : %s\n", mask);
 
+	pcap_freealldevs(d);
 // =================================================================
 // 2. read pcap and parsing
 	const char *optstring = "r:w:";
@@ -60,14 +74,18 @@ int main(int argc, char* argv[]){
 	
 	char fname[32];
 
+	printf("version :: %s\n", pcap_lib_version());
 
 	optind = 1;
 	while((option = getopt(argc, argv, optstring)) != -1){
 		switch(option) {
 			case 'w':
 				while(1){
+					ret = pcap_findalldevs(&alldevsp, errbuf);
+					
 					printf("===== pcap_open_live =====\n");
-					handle = pcap_open_live(dev, BUFSIZ, PROMISCUOUS, -1, error_buffer);					if(handle == NULL){
+					handle = pcap_open_live(alldevsp->name, BUFSIZ, PROMISCUOUS, -1, error_buffer);		
+					if(handle == NULL){
 						printf("%s\n", error_buffer);
 						exit(1);
 					}
@@ -82,13 +100,12 @@ int main(int argc, char* argv[]){
 
 					// pcap dump
 					printf("===== pcap_dump_open =====\n");
-					printf("version :: %s\n", pcap_lib_version());
 					pcap_dumper_t *df;
 					df = pcap_dump_open(handle, fname);
 					if(df == 0) {printf("fail dump_open\n"); return 3;}
 
-					if(pcap_loop(handle, 0, packet_handler_live, (u_char*)df) < 0){
-						printf("pcap_loop() failed: %s\n", pcap_geterr(handle));
+					if(pcap_loop(handle, 0, packet_handler_live, (u_char*)df) == -2){
+						printf("pcap_breakloop \n");
 						return 2;
 					}
 					else
@@ -101,6 +118,7 @@ int main(int argc, char* argv[]){
 					file_write_pcap_file_header(df);
 					pcap_dump_close(df);
 					pcap_close(handle);
+					pcap_freealldevs(alldevsp);
 				}
 				break;
 				
