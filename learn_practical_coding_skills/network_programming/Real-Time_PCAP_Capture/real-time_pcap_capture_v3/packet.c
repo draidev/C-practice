@@ -1,10 +1,3 @@
-/*
- *
- *	read pcap and print ip, port, protocol by format
- *
- *
- * */
-
 #include "packet.h"
 
 void packet_handler_offline(u_char *handle, const struct pcap_pkthdr* pkthdr, const u_char* packet){

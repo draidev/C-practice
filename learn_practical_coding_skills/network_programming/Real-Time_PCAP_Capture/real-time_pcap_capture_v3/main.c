@@ -72,7 +72,7 @@ int main(int argc, char* argv[]){
 	const char *optstring = "r:w:";
 	char option;
 	pcap_t *handle;
-	int time_flag;
+	int time_flag, flag = 0;
 	time_t timer = 0; //  warning: `timer' might be used uninitialized in this function
 	// (error reference) : https://kldp.org/node/68442
 	struct tm *t;
@@ -81,27 +81,46 @@ int main(int argc, char* argv[]){
 	printf("version :: %s\n", pcap_lib_version());
 
 	optind = 1;
+	int j = 0;
 	while((option = getopt(argc, argv, optstring)) != -1){
 		switch(option) {
 			case 'w':
+				ret = pcap_findalldevs(&alldevsp, errbuf);
+				if(ret == -1){
+					printf("%s\n", errbuf);
+					exit(1);
+				}
+				printf("===== pcap_open_live =====\n");
+				printf("name : %s\n", alldevsp->name);
+				handle = pcap_open_live(alldevsp->name, BUFSIZ, NONPROMISCUOUS, 1000, error_buffer);
+				if(handle == NULL){
+					printf("error : %s\n", error_buffer);
+					exit(1);
+				}
 				while(1){	
-					ret = pcap_findalldevs(&alldevsp, errbuf);
-					printf("===== pcap_open_live =====\n");
-					handle = pcap_open_live(alldevsp->name, BUFSIZ, PROMISCUOUS, -1, error_buffer);		
-					if(handle == NULL){
-						printf("error : %s\n", error_buffer);
-						exit(1);
-					}
-
+					if(flag == 1){
+						printf("===== pcap_open_live =====\n");
+						pcap_findalldevs(&alldevsp, errbuf);
+						printf("name : %s\n", alldevsp->name);
+						handle = pcap_open_live(alldevsp->name, BUFSIZ, NONPROMISCUOUS, 1000, error_buffer);
+						if(handle == NULL){
+							printf("error : %s\n", error_buffer);
+							exit(1);
+						}
+						flag = 0;
+					}	
+					
 					// make file name
-					//timer = time(NULL);
-					//t = localtime(&timer);
 					t = check_time(timer);
 					time_flag = t->tm_min;
 					printf("time_flag : %d\n", time_flag);
 					sprintf(fname, "%04d_%02d_%02d_%02d_%02d.cap", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
 
 					printf("min : %d sec : %d\n", t->tm_min, t->tm_sec);
+					
+					//sprintf(cmd, "ping -c 1 %s | grep from", argv[2]);
+					//system(cmd);
+
 					// pcap dump
 					printf("===== pcap_dump_open =====\n");
 					pcap_dumper_t *df;
@@ -114,20 +133,24 @@ int main(int argc, char* argv[]){
 					else
 						printf("Real-Time pcap capture loop success!\n");
 					
-
 					memset(fname, 0, 32*sizeof(char)); //initialize a file name for a new file
+
 					// attach pcap_header and close
 					t = check_time(timer);
 					if(t->tm_min != time_flag){
 						file_write_pcap_file_header(df);
-						pcap_dump_close(df);
 						pcap_close(handle);
 						pcap_freealldevs(alldevsp);
+						flag = 1;
+						printf("flag check \n");
 					}
-					else{
-						pcap_dump_close(df);
+					pcap_dump_close(df);
+					j++;
+					if(j > 2000){
 						pcap_close(handle);
 						pcap_freealldevs(alldevsp);
+						
+						break;
 					}
 				}
 				break;
