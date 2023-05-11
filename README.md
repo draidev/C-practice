@@ -72,13 +72,3 @@
     - `.dll` : 윈도우/동적라이브러리
    
 <br>    
-
-## psql 주요 Command   
-- `\c`
-    - 여러 DB instance들이 있고, 정보를 조회나 Query 실행 대상 DB
-    - \c [DB Name][Connection User]
-- `\list`
-    - 전체 DB Instance list 조회
-- `\dt`
-    - 현재 접속한 DB Instance의 Table list 조회
-- `\d`
