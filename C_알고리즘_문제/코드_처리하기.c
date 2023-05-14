@@ -26,5 +26,7 @@ char* solution(const char* code) {
         }
     }
     answer[j] = '\0'; // NULL
+    if (strlen(answer)==0)
+        strcpy(answer, "EMPTY");
     return answer;
 }
